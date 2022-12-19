@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My First Node App</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+</head>
+<body>
+<div class="container">
+    <br>
+    
+    <div class="jumbotron">
+        <h1 class="display-4">Socket.io Listener Example</h1>
+    </div>
+    <div id="messages">
+
+    </div>
+</div>
+<script>
+    // var room = "dm-user-yMYerEdOBQ"; // dm-{type}-{id} to join direct message chat, id is target direct message id
+    var room = 'chat-radio-Opnel5aKBz'; // for join radio chat
+    // var room = 'chat-{entity_type}-{entity_id}; global example
+    var socket = io.connect('http://localhost:4010', {
+      'force new connection': true,
+      'reconnection': true,
+    });
+    socket.on('connect_failed', function(){
+        console.log('Connection Failed');
+    });
+    socket.on('connect', function() {
+      // add token to authorize, use access token from login
+      socket.emit('authenticate', { token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoid012Ym1aT2RZQSIsImRldmljZV9pZCI6Int7ZGV2aWNlSWR9fSIsInJlZ2lzdHJhdGlvbl9pZCI6IihmaXJlYmFzZV9pZCkiLCJpYXQiOjE1Njg2MTgwODYsImV4cCI6MTU2ODk3ODA4Niwic3ViIjoibm9pY2UuY29tIn0.Eh71y4otjBZNXTnE774JMTwWMOab2yuq_SiCK7XmhzU' });
+    });
+    socket.on('authenticated', function () {
+      //do other things
+      console.log('authenticated');
+      // join to room after authenticated
+      socket.emit('room', room);
+      // if need to leave room use this
+      // socket.emit('leave', room);
+    });
+    socket.on('unauthorized', function(error, callback) {
+      if (error.data.type == 'UnauthorizedError' || error.data.code == 'invalid_token') {
+        // redirect user to login page perhaps or execute callback:
+        callback();
+        console.log('Invalid user token', error);
+      }
+    });
+    
+    socket.on('disconnect', function (err) {
+      console.log('Disconnected', err);
+    });
+    $(() => {
+        $("#send").click(()=>{
+            sendMessage({name: $("#name").val(), message: $("#message").val()});
+        })
+
+        getMessages()
+    })
+
+    socket.on('message', (message) => {
+      console.log('message', message);
+      addMessages(message);
+    });
+
+    socket.on('online-user', (data) => {
+      console.log('online-user', data);
+    });
+
+    function addMessages(message){
+        $("#messages").append(`<h4> ${message.sender.username} </h4> <p> ${message.message} </p>`)
+    }
+
+    function getMessages(){
+      // $.get('http://localhost:4000/messages', (data) => {
+      //   data.forEach(addMessages);
+      // })
+    }
+
+    function sendMessage(message){
+      // $.post('http://localhost:4000/messages', message)
+    }
+</script>
+</body>
+</html>
